@@ -11,17 +11,23 @@ for index,page in enumerate(reader.pages):
     }
     pages.append(page_data)
 chunks=[]
+chunk_size=100
+overlap=20
 for page_data in pages:
-    words=page_data["text"].split(" ")
-    for start in range(0,len(words),100):
-        chunk_words=words[start:start+100]
+    text=page_data["text"].strip()
+    if text:
+        words=text.split()
+        for start in range(0,len(words),chunk_size-overlap):
+            chunk_words=words[start:start+chunk_size]
 
-        chunk_data={
-            "page": page_data["page"],
-            "text": " ".join(chunk_words)
-        }
-        chunks.append(chunk_data)
+            chunk_data={
+                "page": page_data["page"],
+                "text": " ".join(chunk_words)
+            }
+            chunks.append(chunk_data)
 
-print("number of pages:", len(pages))
-print("number of chunks:", len(chunks))
+# print("number of pages:", len(pages))
+# print("number of chunks:", len(chunks))
 print(chunks[0])
+print(chunks[1])
+print(chunks[2])
