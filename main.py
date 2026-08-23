@@ -1,4 +1,7 @@
 from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def extract_pages(pdf_path):
     reader = PdfReader(pdf_path)
@@ -39,6 +42,12 @@ overlap=20
 chunks=chunk_pages(pages,chunk_size,overlap)
 # print("number of pages:", len(pages))
 # print("number of chunks:", len(chunks))
-print(chunks[0])
-print(chunks[1])
-print(chunks[2])
+# print(chunks[0])
+# print(chunks[1])
+# print(chunks[2])
+
+texts=[chunk["text"] for chunk in chunks]
+embeddings=model.encode(texts)
+
+print (len(embeddings))
+print(embeddings.shape)
