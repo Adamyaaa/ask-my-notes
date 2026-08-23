@@ -10,17 +10,20 @@ for index,page in enumerate(reader.pages):
         "text": page.extract_text()
     }
     pages.append(page_data)
+
 chunks=[]
 chunk_size=100
 overlap=20
+
 for page_data in pages:
     text=page_data["text"].strip()
     if text:
         words=text.split()
-        for start in range(0,len(words),chunk_size-overlap):
+        for index,start in enumerate(range(0,len(words),chunk_size-overlap)):
             chunk_words=words[start:start+chunk_size]
 
             chunk_data={
+                "chunk_id": index,
                 "page": page_data["page"],
                 "text": " ".join(chunk_words)
             }
