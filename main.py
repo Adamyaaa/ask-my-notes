@@ -1,6 +1,12 @@
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
 import faiss
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI()
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
