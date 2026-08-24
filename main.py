@@ -73,5 +73,16 @@ distances, indices = index.search(query_embedding, k)
 # print(indices)
 # print(distances)
 
+# for distance,i in zip(distances[0],indices[0]):
+#     print("distance:",distance)
+#     print("chunk ID:",chunks[i]["chunk_id"])
+#     print("page:",chunks[i]["page"])
+#     print("text:",chunks[i]["text"])
+#     print("-" * 80)
+
+context=""
 for i in indices[0]:
-    print(chunks[i])
+    context+=f"source: Page{chunks[i]['page']}\n"
+    context+=chunks[i]["text"] + "\n\n"
+
+print(context)
