@@ -1,5 +1,6 @@
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
+import faiss
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -21,20 +22,26 @@ pages = extract_pages("data/notes.pdf")
 
 
 def chunk_pages(pages,chunk_size,overlap):
+
     chunks=[]
+    c_count=0
+
     for page_data in pages:
         text=page_data["text"].strip()
+
         if text:
             words=text.split()
-            for index,start in enumerate(range(0,len(words),chunk_size-overlap)):
+
+            for start in range(0,len(words),chunk_size-overlap):
                 chunk_words=words[start:start+chunk_size]
 
                 chunk_data={
-                    "chunk_id": index,
+                    "chunk_id": c_count,
                     "page": page_data["page"],
                     "text": " ".join(chunk_words)
                 }
                 chunks.append(chunk_data)
+                c_count+=1
     return chunks
 
 chunk_size=100
@@ -49,5 +56,22 @@ chunks=chunk_pages(pages,chunk_size,overlap)
 texts=[chunk["text"] for chunk in chunks]
 embeddings=model.encode(texts)
 
-print (len(embeddings))
-print(embeddings.shape)
+dimensions=embeddings.shape[1]
+index=faiss.IndexFlatL2(dimensions)
+index.add(embeddings)
+# print(index.ntotal)
+
+
+query = "What is an API?"
+
+
+query_embedding = model.encode([query])
+
+k = 5
+distances, indices = index.search(query_embedding, k)
+
+# print(indices)
+# print(distances)
+
+for i in indices[0]:
+    print(chunks[i])
