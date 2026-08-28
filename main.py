@@ -1,94 +1,43 @@
-from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
-import faiss
-from dotenv import load_dotenv
-from openai import OpenAI
+import sys
+import argparse
+from rag_engine import RAGEngine
 
-load_dotenv()
+def main():
+    parser = argparse.ArgumentParser(description="Ask My Notes - RAG CLI")
+    parser.add_argument("--pdf", type=str, default="data/notes.pdf", help="Path to the PDF file")
+    args = parser.parse_args()
 
-client = OpenAI()
+    print("\n--- Ask My Notes ---")
+    print(f"Initializing AI and reading '{args.pdf}'...")
+    
+    try:
+        engine = RAGEngine(pdf_path=args.pdf)
+    except Exception as e:
+        print(f"Error initializing RAG Engine: {e}")
+        sys.exit(1)
+        
+    print("\nReady! Ask questions about your notes. Type 'exit' or 'quit' to stop.")
+    
+    while True:
+        try:
+            query = input("\nQ: ").strip()
+            if query.lower() in ['exit', 'quit']:
+                print("Goodbye!")
+                break
+            if not query:
+                continue
+                
+            print("Thinking...")
+            result = engine.query(query)
+            
+            print(f"\nA: {result['answer']}")
+            print(f"(Sources: Pages {', '.join(map(str, result['sources']))})")
+            
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
+        except Exception as e:
+            print(f"\nAn error occurred: {e}")
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-def extract_pages(pdf_path):
-    reader = PdfReader(pdf_path)
-
-    pages = []
-
-    for index, page in enumerate(reader.pages):
-        page_data = {
-            "page": index + 1,
-            "text": page.extract_text()
-        }
-        pages.append(page_data)
-
-    return pages
-pages = extract_pages("data/notes.pdf")
-
-
-
-def chunk_pages(pages,chunk_size,overlap):
-
-    chunks=[]
-    c_count=0
-
-    for page_data in pages:
-        text=page_data["text"].strip()
-
-        if text:
-            words=text.split()
-
-            for start in range(0,len(words),chunk_size-overlap):
-                chunk_words=words[start:start+chunk_size]
-
-                chunk_data={
-                    "chunk_id": c_count,
-                    "page": page_data["page"],
-                    "text": " ".join(chunk_words)
-                }
-                chunks.append(chunk_data)
-                c_count+=1
-    return chunks
-
-chunk_size=100
-overlap=20
-chunks=chunk_pages(pages,chunk_size,overlap)
-# print("number of pages:", len(pages))
-# print("number of chunks:", len(chunks))
-# print(chunks[0])
-# print(chunks[1])
-# print(chunks[2])
-
-texts=[chunk["text"] for chunk in chunks]
-embeddings=model.encode(texts)
-
-dimensions=embeddings.shape[1]
-index=faiss.IndexFlatL2(dimensions)
-index.add(embeddings)
-# print(index.ntotal)
-
-
-query = "What is an API?"
-
-
-query_embedding = model.encode([query])
-
-k = 5
-distances, indices = index.search(query_embedding, k)
-
-# print(indices)
-# print(distances)
-
-# for distance,i in zip(distances[0],indices[0]):
-#     print("distance:",distance)
-#     print("chunk ID:",chunks[i]["chunk_id"])
-#     print("page:",chunks[i]["page"])
-#     print("text:",chunks[i]["text"])
-#     print("-" * 80)
-
-context=""
-for i in indices[0]:
-    context+=f"source: Page{chunks[i]['page']}\n"
-    context+=chunks[i]["text"] + "\n\n"
-
-print(context)
+if __name__ == "__main__":
+    main()
